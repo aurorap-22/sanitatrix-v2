@@ -1,6 +1,8 @@
 package com.sanitatrix.sanitatrix_v2.model;
 
 import jakarta.persistence.*;
+
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -10,24 +12,36 @@ public class Medico {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne @JoinColumn(name = "id_utente", nullable = false, unique = true)
-    private Utente utente;
+   @Column(nullable = false)
+   private String nome;
 
-    @Column(unique = true, nullable = false, length = 16)
-    private String codiceFiscale;
+   @Column(nullable = false)
+   private String cognome;
 
-    private String nome, cognome, email;
-
-    @OneToMany(mappedBy = "medico", cascade = CascadeType.ALL)
-    private List<Disponibilita> disponibilità;
-
-    @OneToMany(mappedBy = "medico")
-    private List<Prenotazione> prenotazioni;
-
-    @Enumerated(EnumType.STRING) @Column(nullable = false)
+   @Enumerated(EnumType.STRING)@Column(nullable = false)
     private TipoVisita specializzazione;
 
+   @Column
+    private String telefono;
 
+   @OneToOne @JoinColumn(name = "id_utente", nullable = false, unique = true)
+    private Utente utente;
+
+   @OneToMany(mappedBy = "medico", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Prenotazione> prenotazioni= new ArrayList<>();
+
+    @OneToMany(mappedBy = "medico", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Disponibilita> disponibilita= new ArrayList<>();
+
+    //COSTRUTTORI
+    public Medico(){}
+
+    public Medico(String nome, String cognome, TipoVisita specializzazione, Utente utente) {
+        this.nome = nome;
+        this.cognome = cognome;
+        this.specializzazione = specializzazione;
+        this.utente= utente;
+    }
     //GETTER/SETTER
 
     public Long getId() {
@@ -36,22 +50,6 @@ public class Medico {
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public Utente getUtente() {
-        return utente;
-    }
-
-    public void setUtente(Utente utente) {
-        this.utente = utente;
-    }
-
-    public String getCodiceFiscale() {
-        return codiceFiscale;
-    }
-
-    public void setCodiceFiscale(String codiceFiscale) {
-        this.codiceFiscale = codiceFiscale;
     }
 
     public String getNome() {
@@ -70,20 +68,28 @@ public class Medico {
         this.cognome = cognome;
     }
 
-    public String getEmail() {
-        return email;
+    public TipoVisita getSpecializzazione() {
+        return specializzazione;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public void setSpecializzazione(TipoVisita specializzazione) {
+        this.specializzazione = specializzazione;
     }
 
-    public List<Disponibilita> getDisponibilità() {
-        return disponibilità;
+    public String getTelefono() {
+        return telefono;
     }
 
-    public void setDisponibilità(List<Disponibilita> disponibilità) {
-        this.disponibilità = disponibilità;
+    public void setTelefono(String telefono) {
+        this.telefono = telefono;
+    }
+
+    public Utente getUtente() {
+        return utente;
+    }
+
+    public void setUtente(Utente utente) {
+        this.utente = utente;
     }
 
     public List<Prenotazione> getPrenotazioni() {
@@ -94,11 +100,11 @@ public class Medico {
         this.prenotazioni = prenotazioni;
     }
 
-    public TipoVisita getSpecializzazione() {
-        return specializzazione;
+    public List<Disponibilita> getDisponibilita() {
+        return disponibilita;
     }
 
-    public void setSpecializzazione(TipoVisita specializzazione) {
-        this.specializzazione = specializzazione;
+    public void setDisponibilita(List<Disponibilita> disponibilita) {
+        this.disponibilita = disponibilita;
     }
 }

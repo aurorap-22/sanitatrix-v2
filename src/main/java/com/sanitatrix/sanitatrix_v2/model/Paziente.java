@@ -1,5 +1,8 @@
 package com.sanitatrix.sanitatrix_v2.model;
 import jakarta.persistence.*;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity @Table(name = "pazienti")
@@ -8,20 +11,43 @@ public class Paziente {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
+    private String nome;
+
+    @Column(nullable = false)
+    private String cognome;
+
+    @Column(nullable = false)
+    private LocalDate dataNascita;
+
+    @Column(nullable = false)
+    private String telefono;
+
+    @Column(nullable = false)
+    private String indirizzo;
+
+
     @OneToOne @JoinColumn(name = "id_utente", nullable = false, unique = true)
     private Utente utente;
 
-    @Column(unique = true, nullable = false, length = 16)
-    private String codiceFiscale;
-    private String nome, cognome, telefono, email;
+    @OneToMany(mappedBy = "paziente", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Prenotazione> prenotazioni= new ArrayList<>();
 
-    @OneToMany(mappedBy = "paziente")
-    private List<Prenotazione> prenotazioni;
+    @OneToMany(mappedBy = "paziente", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Referto> referti= new ArrayList<>();
 
-    @OneToMany(mappedBy = "paziente")
-    private List<Referto> referti;
+    //COSTRUTTORI
+    public Paziente(){}
 
-   //GETTER/SETTER
+    public Paziente(String nome, String cognome, LocalDate dataNascita, String telefono, Utente utente) {
+        this.nome = nome;
+        this.cognome = cognome;
+        this.dataNascita = dataNascita;
+        this.telefono = telefono;
+        this.utente= utente;
+    }
+    //GETTER/SETTER
+
 
     public Long getId() {
         return id;
@@ -29,22 +55,6 @@ public class Paziente {
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public Utente getUtente() {
-        return utente;
-    }
-
-    public void setUtente(Utente utente) {
-        this.utente = utente;
-    }
-
-    public String getCodiceFiscale() {
-        return codiceFiscale;
-    }
-
-    public void setCodiceFiscale(String codiceFiscale) {
-        this.codiceFiscale = codiceFiscale;
     }
 
     public String getNome() {
@@ -63,6 +73,14 @@ public class Paziente {
         this.cognome = cognome;
     }
 
+    public LocalDate getDataNascita() {
+        return dataNascita;
+    }
+
+    public void setDataNascita(LocalDate dataNascita) {
+        this.dataNascita = dataNascita;
+    }
+
     public String getTelefono() {
         return telefono;
     }
@@ -71,12 +89,20 @@ public class Paziente {
         this.telefono = telefono;
     }
 
-    public String getEmail() {
-        return email;
+    public String getIndirizzo() {
+        return indirizzo;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public void setIndirizzo(String indirizzo) {
+        this.indirizzo = indirizzo;
+    }
+
+    public Utente getUtente() {
+        return utente;
+    }
+
+    public void setUtente(Utente utente) {
+        this.utente = utente;
     }
 
     public List<Prenotazione> getPrenotazioni() {
