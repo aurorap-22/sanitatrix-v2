@@ -24,10 +24,10 @@ public class Utente {
     @Column(nullable = false)
     private Ruolo ruolo;
 
-    @OneToOne(mappedBy="utente", cascade =CascadeType.ALL, orphanRemove=true)
+    @OneToOne(mappedBy="utente", cascade =CascadeType.ALL)
     private Medico medico;
 
-    @OneToOne(mappedBy="utente", cascade =CascadeType.ALL, orphanRemove=true)
+    @OneToOne(mappedBy="utente", cascade =CascadeType.ALL)
     private Paziente paziente;
 
     //COSTRUTTORI

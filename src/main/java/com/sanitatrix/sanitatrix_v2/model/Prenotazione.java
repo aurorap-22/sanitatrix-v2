@@ -1,22 +1,20 @@
 package com.sanitatrix.sanitatrix_v2.model;
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
-@Entity @Table(name = "prenotazione")
+@Entity @Table(name = "prenotazioni")
 public class Prenotazione {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
-    private LocalDate data;
+    private LocalDateTime dataOra;
 
     @Column(nullable = false)
-    private LocalTime ora;
-
-    @Column(nullable = false)
-    private String stato;
+    private String stato;//PRENOTATA, COMPLETATA, ANNULLATA
 
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "id_paziente")
     private Paziente paziente;
@@ -27,12 +25,22 @@ public class Prenotazione {
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "id_prestazione")
     private Prestazione prestazione;
 
-    @OneToOne(mappedBy = "prenotazione", cascade = CascadeType.ALL)
+    @OneToOne(mappedBy = "prenotazione", cascade = CascadeType.ALL, orphanRemoval = true)
     private Referto referto;
 
-    @OneToOne(mappedBy = "prenotazione", cascade = CascadeType.ALL)
+    @OneToOne(mappedBy = "prenotazione", cascade = CascadeType.ALL, orphanRemoval = true)
     private Pagamento pagamento;
 
+   //COSTRUTTORI
+    public Prenotazione(){}
+
+    public Prenotazione(LocalDateTime dataOra, String stato, Paziente paziente, Medico medico, Prestazione prestazione) {
+        this.dataOra = dataOra;
+        this.stato = stato;
+        this.paziente = paziente;
+        this.medico = medico;
+        this.prestazione = prestazione;
+    }
     //GETTER/SETTER
 
     public Long getId() {
@@ -43,20 +51,12 @@ public class Prenotazione {
         this.id = id;
     }
 
-    public LocalDate getData() {
-        return data;
+    public LocalDateTime getDataOra() {
+        return dataOra;
     }
 
-    public void setData(LocalDate data) {
-        this.data = data;
-    }
-
-    public LocalTime getOra() {
-        return ora;
-    }
-
-    public void setOra(LocalTime ora) {
-        this.ora = ora;
+    public void setDataOra(LocalDateTime dataOra) {
+        this.dataOra = dataOra;
     }
 
     public String getStato() {
@@ -106,7 +106,6 @@ public class Prenotazione {
     public void setPagamento(Pagamento pagamento) {
         this.pagamento = pagamento;
     }
-
 
     //METODO PER VERIFICARE SE IL MEDICO PUO' FARE UNA DETERMINATA VISITA
 

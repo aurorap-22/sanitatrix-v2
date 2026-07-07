@@ -7,12 +7,6 @@ public class Referto {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "id_paziente", nullable = false)
-    private Paziente paziente; // per storico veloce
-
-    @OneToOne(fetch = FetchType.LAZY) @JoinColumn(name = "id_prenotazione", nullable = false)
-    private Prenotazione prenotazione;
-
     @Column(columnDefinition = "TEXT")
     private String diagnosi;
 
@@ -25,6 +19,21 @@ public class Referto {
     @Column(nullable = false)
     private LocalDate dataReferto= LocalDate.now();
 
+    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "id_paziente", nullable = false)
+    private Paziente paziente; // per storico veloce
+
+    @OneToOne(fetch = FetchType.LAZY) @JoinColumn(name = "id_prenotazione", nullable = false)
+    private Prenotazione prenotazione;
+    //COSTRUTTORI
+    public Referto(){}
+
+    public Referto(String diagnosi, String terapia, String esamiConsigliati, Paziente paziente, Prenotazione prenotazione) {
+        this.diagnosi = diagnosi;
+        this.terapia = terapia;
+        this.esamiConsigliati = esamiConsigliati;
+        this.paziente = paziente;
+        this.prenotazione = prenotazione;
+    }
     //GETTER/SETTER
 
 
@@ -34,22 +43,6 @@ public class Referto {
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public Paziente getPaziente() {
-        return paziente;
-    }
-
-    public void setPaziente(Paziente paziente) {
-        this.paziente = paziente;
-    }
-
-    public Prenotazione getPrenotazione() {
-        return prenotazione;
-    }
-
-    public void setPrenotazione(Prenotazione prenotazione) {
-        this.prenotazione = prenotazione;
     }
 
     public String getDiagnosi() {
@@ -82,5 +75,21 @@ public class Referto {
 
     public void setDataReferto(LocalDate dataReferto) {
         this.dataReferto = dataReferto;
+    }
+
+    public Paziente getPaziente() {
+        return paziente;
+    }
+
+    public void setPaziente(Paziente paziente) {
+        this.paziente = paziente;
+    }
+
+    public Prenotazione getPrenotazione() {
+        return prenotazione;
+    }
+
+    public void setPrenotazione(Prenotazione prenotazione) {
+        this.prenotazione = prenotazione;
     }
 }
