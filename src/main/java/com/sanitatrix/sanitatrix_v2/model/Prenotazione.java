@@ -14,6 +14,10 @@ public class Prenotazione {
     private LocalDateTime dataOra;
 
     @Column(nullable = false)
+    private LocalDateTime dataFine;
+
+
+    @Column(nullable = false)
     private String stato;//PRENOTATA, COMPLETATA, ANNULLATA
 
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "id_paziente")
@@ -42,6 +46,15 @@ public class Prenotazione {
         this.prestazione = prestazione;
     }
     //GETTER/SETTER
+
+
+    public LocalDateTime getDataFine() {
+        return dataFine;
+    }
+
+    public void setDataFine(LocalDateTime dataFine) {
+        this.dataFine = dataFine;
+    }
 
     public Long getId() {
         return id;

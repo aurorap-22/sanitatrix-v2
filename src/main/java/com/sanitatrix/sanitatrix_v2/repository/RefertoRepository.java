@@ -7,8 +7,9 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
-@Repository
+
 public interface RefertoRepository extends JpaRepository<Referto, Long> {
-    List<Referto> findByPazienteId (Long pazienteId);
-    Optional<Referto> findByPrenotazioneId (Long prenotazioneId);
+    List<Referto> findByPaziente_Id (Long pazienteId);
+
+    Optional<Referto> findByPrenotazione_Id (Long prenotazioneId);
 }

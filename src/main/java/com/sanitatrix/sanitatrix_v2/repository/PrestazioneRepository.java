@@ -5,9 +5,8 @@ import com.sanitatrix.sanitatrix_v2.model.TipoVisita;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.Optional;
+import java.util.List;
 
-@Repository
 public interface PrestazioneRepository extends JpaRepository<Prestazione, Long> {
-    Optional<Prestazione> findByTipoVisita(TipoVisita tipoVisita);
+    List<Prestazione> findByTipoVisita(TipoVisita tipoVisita);
 }
