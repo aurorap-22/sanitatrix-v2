@@ -11,17 +11,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
 @RestController
 @RequestMapping("/api/medici")
+@CrossOrigin(origins = "http://localhost:5173")
 public class MedicoController {
-
     @Autowired
     private MedicoService medicoService;
-
     @Autowired
     private UtenteService utenteService;
-
     @GetMapping
     public List<Medico> getAllMedici(){
         return medicoService.getAllMedici();
@@ -36,13 +33,10 @@ public class MedicoController {
             medico.setUtente(utente);
             Medico saved= medicoService.saveMedico(medico);
             return ResponseEntity.ok(saved);
-
-
         }catch (Exception e){
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-
     @GetMapping("/{id}")
     public Medico getMedicoById(@PathVariable Long id){
         return medicoService.getMedicoById(id);

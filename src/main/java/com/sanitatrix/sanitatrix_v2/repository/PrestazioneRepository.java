@@ -9,4 +9,5 @@ import java.util.List;
 
 public interface PrestazioneRepository extends JpaRepository<Prestazione, Long> {
     List<Prestazione> findByTipoVisita(TipoVisita tipoVisita);
+
 }

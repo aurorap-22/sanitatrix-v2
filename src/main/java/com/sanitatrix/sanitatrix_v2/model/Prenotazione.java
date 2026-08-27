@@ -16,7 +16,6 @@ public class Prenotazione {
     @Column(nullable = false)
     private LocalDateTime dataFine;
 
-
     @Column(nullable = false)
     private String stato;//PRENOTATA, COMPLETATA, ANNULLATA
 

@@ -26,7 +26,6 @@ public class Paziente {
     @Column(nullable = false)
     private String indirizzo;
 
-
     @OneToOne @JoinColumn(name = "id_utente", nullable = false, unique = true)
     private Utente utente;
 

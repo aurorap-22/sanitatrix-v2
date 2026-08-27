@@ -11,5 +11,6 @@ public interface PrenotazioneRepository extends JpaRepository<Prenotazione, Long
     List<Prenotazione> findByPazienteId (Long pazienteId);
     List<Prenotazione> findByMedicoIdAndDataOraBetween(Long medicoId, LocalDateTime inizio,LocalDateTime fine);
     List<Prenotazione> findByStato (String stato);
+    List<Prenotazione> findByMedicoId(Long medicoId);
 
 }

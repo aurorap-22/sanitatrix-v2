@@ -22,11 +22,15 @@ public class PrenotazioneService {
     private static final LocalTime ORARIO_CHIUSURA = LocalTime.of(19, 30);
     private static final int DURATA_VISITA_MINUTI= 30;
 
+
     //CREA PRENOTAZIONE
     public Prenotazione createPrenotazione(Prenotazione prenotazione){
         LocalDateTime dataOra = prenotazione.getDataOra();
         LocalDateTime dataFine = dataOra.plusMinutes(DURATA_VISITA_MINUTI);
-        prenotazione.setDataFine(dataFine);
+       //PASSATO
+        if (dataOra.isBefore(LocalDateTime.now())){
+            throw new RuntimeException("non puoi effettuare una prenotazione relativa a giorno ed ora antecedente all'attuale");
+        }
 
         //CONTROLLO ORARIO
         LocalTime oraInizio = dataOra.toLocalTime();
@@ -57,6 +61,9 @@ public class PrenotazioneService {
         return prenotazioneRepository.save(prenotazione);
 
 
+    }
+    public List<Prenotazione> findByMedicoId(Long id){
+        return prenotazioneRepository.findByMedicoId(id);
     }
 
     //MENU A TENDINA
