@@ -3,6 +3,7 @@ package com.sanitatrix.sanitatrix_v2.controller;
 import com.sanitatrix.sanitatrix_v2.model.Referto;
 import com.sanitatrix.sanitatrix_v2.service.RefertoService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,7 +27,11 @@ public class RefertoController {
     }
 
     @PostMapping
-    public Referto createReferto(@RequestBody Referto referto){
-        return refertoService.saveReferto(referto);
+    public ResponseEntity<?> createReferto(@RequestBody Referto referto){
+       try{
+           return ResponseEntity.ok(refertoService.saveReferto(referto));
+       }catch(Exception e){
+           return ResponseEntity.badRequest().body(e.getMessage());
+       }
     }
 }

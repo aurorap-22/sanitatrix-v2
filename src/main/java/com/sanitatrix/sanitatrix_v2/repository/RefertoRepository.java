@@ -12,4 +12,5 @@ public interface RefertoRepository extends JpaRepository<Referto, Long> {
     List<Referto> findByPaziente_Id (Long pazienteId);
 
     Optional<Referto> findByPrenotazione_Id (Long prenotazioneId);
+    boolean existsByPrenotazione_Id(Long prenotazioneId);
 }

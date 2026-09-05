@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "com.sanitatrix.sanitatrix_v2")
 @EntityScan(basePackages = "com.sanitatrix.sanitatrix_v2.model")
 @EnableJpaRepositories(basePackages = "com.sanitatrix.sanitatrix_v2.repository")
 public class SanitatrixV2Application {
