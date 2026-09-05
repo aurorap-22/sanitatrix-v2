@@ -17,12 +17,11 @@ export default function Login() {
                 password
             })
 
-            // salva token e ruolo
-            localStorage.setItem('token', res.data.token)
-            localStorage.setItem('role', res.data.role)
-            localStorage.setItem('username', res.data.username)
+            localStorage.setItem('email', res.data.email)
+            localStorage.setItem('ruolo', res.data.ruolo)
+            localStorage.setItem('id', res.data.id)
 
-            const role = res.data.role
+            const role = res.data.ruolo
 
             if (role === 'PAZIENTE') {
                 navigate('/paziente')
@@ -42,38 +41,17 @@ export default function Login() {
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#f5f5f5' }}>
             <form onSubmit={handleLogin} style={{ background: 'white', padding: '30px', borderRadius: '10px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)', width: '350px' }}>
                 <h2 style={{ textAlign: 'center', marginBottom: '20px', color: '#7c3aed' }}>Sanitatrix - Login</h2>
-
                 <div style={{ marginBottom: '15px' }}>
-                    <label>Username</label>
-                    <input
-                        type="text"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        required
-                        style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '5px', border: '1px solid #ccc' }}
-                    />
+                    <label>Username (email o codice fiscale)</label>
+                    <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '5px', border: '1px solid #ccc' }} />
                 </div>
-
                 <div style={{ marginBottom: '15px' }}>
                     <label>Password</label>
-                    <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '5px', border: '1px solid #ccc' }}
-                    />
+                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '5px', border: '1px solid #ccc' }} />
                 </div>
-
                 {errore && <p style={{ color: 'red', textAlign: 'center' }}>{errore}</p>}
-
-                <button type="submit" style={{ width: '100%', padding: '10px', background: '#7c3aed', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>
-                    Accedi
-                </button>
-
-                <p style={{ textAlign: 'center', marginTop: '15px' }}>
-                    Non hai un account? <Link to="/register">Registrati</Link>
-                </p>
+                <button type="submit" style={{ width: '100%', padding: '10px', background: '#7c3aed', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>Accedi</button>
+                <p style={{ textAlign: 'center', marginTop: '15px' }}>Non hai un account? <Link to="/register">Registrati</Link></p>
             </form>
         </div>
     )

@@ -35,6 +35,11 @@ public class PazienteController {
         return pazienteService.getAllPazienti();
     }
 
+    @GetMapping("/utente/{idUtente}")
+    public ResponseEntity<Paziente> getByUtenteId(@PathVariable Long idUtente){
+        return pazienteService.getAllPazienti().stream().filter(p->p.getUtente() != null && p.getUtente().getId().equals(idUtente)).findFirst().map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+    }
+
     @PostMapping("/registrazione")
     public ResponseEntity<?> registrazione(@RequestBody Map<String, String> body){
         try{

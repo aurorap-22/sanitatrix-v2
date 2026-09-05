@@ -81,15 +81,24 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> payload) {
-        String email = payload.get("email");
+        String identifier = payload.get("email");
+        if (identifier == null) identifier = payload.get("username");
+        if (identifier == null) identifier = payload.get("codiceFiscale");
+        if (identifier == null) return ResponseEntity.status(401).body("Credenziali errate");
+
+        identifier = identifier.trim();
+        var opt = utenteRepository.findByEmail(identifier);
+        if (opt.isEmpty()) {
+            opt = utenteRepository.findByCodiceFiscale(identifier.toUpperCase());
+        }
         String password = payload.get("password");
-        var opt = utenteRepository.findByEmail(email);
-        if (opt.isEmpty() ||!passwordEncoder.matches(password, opt.get().getPassword())) {
+        if (opt.isEmpty() || !passwordEncoder.matches(password, opt.get().getPassword())) {
             return ResponseEntity.status(401).body("Credenziali errate");
         }
         Utente u = opt.get();
         Map<String, Object> resp = new HashMap<>();
         resp.put("email", u.getEmail());
+        resp.put("codiceFiscale", u.getCodiceFiscale());
         resp.put("ruolo", u.getRuolo().toString());
         resp.put("id", u.getId());
         return ResponseEntity.ok(resp);
