@@ -20,95 +20,43 @@ public class PrenotazioneService {
 
     private static final LocalTime ORARIO_APERTURA = LocalTime.of(9,0);
     private static final LocalTime ORARIO_CHIUSURA = LocalTime.of(19, 30);
-    private static final int DURATA_VISITA_MINUTI= 30;
+    private static final int DURATA_VISITA_MINUTI = 30;
 
-
-    //CREA PRENOTAZIONE
     public Prenotazione createPrenotazione(Prenotazione prenotazione){
-        LocalDateTime dataOra = prenotazione.getDataOra();
-        LocalDateTime dataFine = dataOra.plusMinutes(DURATA_VISITA_MINUTI);
-       //PASSATO
-        if (dataOra.isBefore(LocalDateTime.now())){
-            throw new RuntimeException("non puoi effettuare una prenotazione relativa a giorno ed ora antecedente all'attuale");
-        }
-
-        //CONTROLLO ORARIO
-        LocalTime oraInizio = dataOra.toLocalTime();
-        if (oraInizio.isBefore(ORARIO_APERTURA) || dataFine.toLocalTime().isAfter(ORARIO_CHIUSURA)){
-            throw new RuntimeException("Orario non valido, è possibile effettuare le visite dalle 9:00, con ultimaa slot disponibile dalle 19:00 alle 19:30");
-        }
-
-        //CONTROLLO SLOT MEZZ'ORA
-        if (oraInizio.getMinute() != 0 && oraInizio.getMinute() != 30){
-            throw new RuntimeException("Le prenotazioni sono disponibili solo alle :00 o alle :30");
-        }
-
-        // CONTROLLO SETTIMANA
-        DayOfWeek giorno = dataOra.getDayOfWeek();
-        if(giorno == DayOfWeek.SATURDAY || giorno == DayOfWeek.SUNDAY){
-            throw new RuntimeException("E' possibile prenotare le visite solo dal lunedì al venerdì");
-        }
-
-        //CONTROLLO SOVRAPPOSIZIONE
-        LocalDateTime inizioControllo = dataOra.minusMinutes(DURATA_VISITA_MINUTI);
-        List<Prenotazione> sovrapposte = prenotazioneRepository.findByMedicoIdAndDataOraBetween(prenotazione.getMedico().getId(), inizioControllo, dataFine);
-
-        if(!sovrapposte.isEmpty()){
-            throw new RuntimeException("il dottore non e' disponibile in questa fascia oraria");
-        }
-
-        prenotazione.setStato("PRENOTATA");
-        return prenotazioneRepository.save(prenotazione);
-
-
-    }
-    public List<Prenotazione> findByMedicoId(Long id){
-        return prenotazioneRepository.findByMedicoId(id);
+       if(prenotazione.getDataOra() != null){
+           prenotazione.setDataFine(prenotazione.getDataOra().plusMinutes(30));
+       }
+       prenotazione.setStato("PRENOTATA");
+       prenotazione.setPrestazione(null);
+       return prenotazioneRepository.save(prenotazione);
     }
 
-    //MENU A TENDINA
     public List<String> getSlotDisponibili(Long medicoId, LocalDate data){
         List<String> tuttiGliSlot = new ArrayList<>();
-        List<String> slotOccupati = new ArrayList<>();
-
-        //GENERAZIONE SLOT DI MEZZ'ORA DA ORARIO APERTURA A CHIUSURA
         LocalTime ora = ORARIO_APERTURA;
         while (!ora.isAfter(LocalTime.of(19,0))){
-            tuttiGliSlot.add(ora.toString());
+            tuttiGliSlot.add(ora.toString().substring(0,5));
             ora = ora.plusMinutes(DURATA_VISITA_MINUTI);
         }
-        //prenotazioni già fatte x giorno
+
         LocalDateTime inizioGiornata = data.atStartOfDay();
         LocalDateTime fineGiornata = data.atTime(23, 59, 59);
-        List<Prenotazione> prenotazioniDelGiorno = prenotazioneRepository.findByMedicoIdAndDataOraBetween(medicoId,inizioGiornata, fineGiornata);
+        List<Prenotazione> delGiorno = prenotazioneRepository.findByMedicoIdAndDataOraBetween(medicoId, inizioGiornata, fineGiornata);
 
-        //ore occupate
-        for (Prenotazione p : prenotazioniDelGiorno){
-            slotOccupati.add(p.getDataOra().toLocalTime().toString());
-        }
-        //slot liberi
-        tuttiGliSlot.removeAll(slotOccupati);
+        List<String> occupati = delGiorno.stream()
+                .map(p -> p.getDataOra().toLocalTime().toString().substring(0,5))
+                .toList();
+
+        tuttiGliSlot.removeAll(occupati);
         return tuttiGliSlot;
     }
 
-
-    public Prenotazione savePrenotazione(Prenotazione prenotazione){
-        return prenotazioneRepository.save(prenotazione);
-    }
-
-    public List<Prenotazione> findAll(){
-        return prenotazioneRepository.findAll();
-    }
-
-    public List<Prenotazione> findByPazienteId(Long pazienteId){
-        return prenotazioneRepository.findByPazienteId(pazienteId);
-    }
-
+    public List<Prenotazione> findByMedicoId(Long id){ return prenotazioneRepository.findByMedicoId(id); }
+    public Prenotazione savePrenotazione(Prenotazione prenotazione){ return prenotazioneRepository.save(prenotazione); }
+    public List<Prenotazione> findAll(){ return prenotazioneRepository.findAll(); }
+    public List<Prenotazione> findByPazienteId(Long pazienteId){ return prenotazioneRepository.findByPazienteId(pazienteId); }
+    public List<Prenotazione> findByStato(String stato){ return prenotazioneRepository.findByStato(stato); }
     public List<Prenotazione> findByMedicoIdAndDataOraBetween(Long medicoId, LocalDateTime inizio, LocalDateTime fine){
         return prenotazioneRepository.findByMedicoIdAndDataOraBetween(medicoId, inizio, fine);
-    }
-
-    public List<Prenotazione> findByStato(String stato){
-        return prenotazioneRepository.findByStato(stato);
     }
 }

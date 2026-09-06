@@ -1,11 +1,14 @@
 package com.sanitatrix.sanitatrix_v2.model;
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity @Table(name = "pazienti")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+
 public class Paziente {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)

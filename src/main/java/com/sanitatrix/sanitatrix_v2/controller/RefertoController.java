@@ -28,10 +28,15 @@ public class RefertoController {
 
     @PostMapping
     public ResponseEntity<?> createReferto(@RequestBody Referto referto){
-       try{
-           return ResponseEntity.ok(refertoService.saveReferto(referto));
-       }catch(Exception e){
-           return ResponseEntity.badRequest().body(e.getMessage());
-       }
+        try{
+            return ResponseEntity.ok(refertoService.saveReferto(referto));
+        }catch(Exception e){
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/miei")
+    public List<Referto> getMiei(){
+        return refertoService.getAllReferti();
     }
 }

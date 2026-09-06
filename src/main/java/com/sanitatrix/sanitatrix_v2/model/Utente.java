@@ -1,4 +1,5 @@
 package com.sanitatrix.sanitatrix_v2.model;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 
@@ -24,6 +25,7 @@ public class Utente {
     private Ruolo ruolo;
 
     @OneToOne(mappedBy="utente", cascade =CascadeType.ALL)
+    @JsonIgnore
     private Medico medico;
 
     @OneToOne(mappedBy="utente", cascade =CascadeType.ALL)

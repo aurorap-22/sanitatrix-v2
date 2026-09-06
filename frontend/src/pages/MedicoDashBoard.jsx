@@ -1,31 +1,122 @@
-import { useEffect, useState } from 'react'
-export default function MedicoDashboard(){
-    const [prenotazioni,setPrenotazioni]=useState([]);
+import { useEffect, useState } from "react";
+import axios from "axios";
+
+export default function MedicoDashboard() {
+    const [prenotazioni, setPrenotazioni] = useState([]);
     const [selected, setSelected] = useState(null);
-    const [form, setForm] = useState({ diagnosi:"", terapia:"", esamiConsigliati:"" });
-    const medicoId = localStorage.getItem("medicoId");
-    const carica = () => { fetch(`http://localhost:8080/api/prenotazioni/medico/${medicoId}`).then(r=>r.json()).then(setPrenotazioni) }
-    useEffect(()=>{ carica() },[])
-    const salva = async () => {
-        const res = await fetch("http://localhost:8080/api/referti", {
-            method:"POST", headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({ diagnosi: form.diagnosi, terapia: form.terapia, esamiConsigliati: form.esamiConsigliati, dataReferto: new Date().toISOString().split('T')[0], paziente: { id: selected.paziente.id }, prenotazione: { id: selected.id } })
-        })
-        if(res.ok){ alert("Referto salvato!"); setSelected(null); setForm({diagnosi:"", terapia:"", esamiConsigliati:""}); carica(); } else { alert("Errore: " + await res.text()); }
-    }
+    const [referto, setReferto] = useState({ diagnosi: "", prescrizione: "", note: "" });
+    const [loading, setLoading] = useState(true);
+
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const token = localStorage.getItem("token");
+    const config = { headers: { Authorization: `Bearer ${token}` } };
+
+    // funzione che trova la data in qualunque campo tu abbia
+    const getData = (p) => {
+        return p.dataInizio || p.dataOra || p.data || p.dataAppuntamento || p.slot;
+    };
+
+    const formattaData = (p) => {
+        const raw = getData(p);
+        if (!raw) return "Data non disponibile";
+        const d = new Date(raw);
+        if (isNaN(d.getTime())) return String(raw); // se è già stringa tipo "09:00 28-09"
+        return d.toLocaleString("it-IT");
+    };
+
+    const fetchPrenotazioni = async () => {
+        try {
+            const idMedico = user?.id || 1;
+            const res = await axios.get(`http://localhost:8080/api/prenotazioni/medico/${idMedico}`, config);
+            const lista = Array.isArray(res.data) ? res.data : res.data.content || [];
+            console.log("Prenotazioni ricevute:", lista);
+            setPrenotazioni(lista);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => { fetchPrenotazioni(); }, []);
+
+    const salvaReferto = async () => {
+        try {
+            await axios.post(`http://localhost:8080/api/referti`, {
+                prenotazione: { id: selected.id },
+                diagnosi: referto.diagnosi,
+                prescrizione: referto.prescrizione,
+                note: referto.note
+            }, config);
+            alert("Referto salvato!");
+            setSelected(null);
+            setReferto({ diagnosi: "", prescrizione: "", note: "" });
+            fetchPrenotazioni();
+        } catch (e) {
+            alert(e.response?.data || e.message);
+        }
+    };
+
+    const inArrivo = prenotazioni.filter(p => (p.stato || "").toUpperCase() === "PRENOTATA");
+    const storico = prenotazioni.filter(p => (p.stato || "").toUpperCase() !== "PRENOTATA");
+
+    if (loading) return <div style={{padding:40}}>Caricamento...</div>;
+
     return (
-        <div style={{padding:20, background:"#b5e8e8", minHeight:"100vh"}}>
-            <h2 style={{color:"#C8A2C8"}}>Dashboard Medico</h2>
-            {!selected? (<>{prenotazioni.map(p=><div key={p.id} style={{background:"white",padding:15,marginBottom:12,borderRadius:15,borderLeft:"6px solid #C8A2C8", display:"flex", justifyContent:"space-between"}}><div><b>{p.dataOra?.replace("T"," ").substring(0,16)}</b><br/>Paziente: {p.paziente?.nome} {p.paziente?.cognome}</div><button onClick={()=>setSelected(p)} style={{background:"#C8A2C8", color:"white", padding:"10px 18px", border:"none", borderRadius:12, height:45}}>Compila Referto</button></div>)}</>
-            ) : (
-                <div style={{background:"white", padding:22, borderRadius:20, maxWidth:600, margin:"auto", border:"3px solid #C8A2C8"}}>
-                    <h3 style={{color:"#C8A2C8"}}>Nuovo Referto per {selected.paziente.nome}</h3>
-                    <label>Diagnosi</label><textarea value={form.diagnosi} onChange={e=>setForm({...form, diagnosi:e.target.value})} style={{width:"100%", height:90, border:"2px solid #b5e8e8", borderRadius:10, padding:10, marginBottom:10}} />
-                    <label>Terapia</label><textarea value={form.terapia} onChange={e=>setForm({...form, terapia:e.target.value})} style={{width:"100%", height:90, border:"2px solid #b5e8e8", borderRadius:10, padding:10, marginBottom:10}} />
-                    <label>Esami Consigliati</label><textarea value={form.esamiConsigliati} onChange={e=>setForm({...form, esamiConsigliati:e.target.value})} style={{width:"100%", height:70, border:"2px solid #b5e8e8", borderRadius:10, padding:10, marginBottom:15}} />
-                    <div style={{display:"flex", gap:10}}><button onClick={salva} style={{background:"#C8A2C8", color:"white", flex:1, padding:12, border:"none", borderRadius:10}}>SALVA</button><button onClick={()=>setSelected(null)} style={{background:"#ddd", flex:1, padding:12, border:"none", borderRadius:10}}>Annulla</button></div>
+        <div style={{ minHeight: "100vh", backgroundColor: "#F5F5F7", padding: "24px" }}>
+            <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+                <h1 style={{ fontSize: "28px", fontWeight: "bold", color: "#7A6BC5" }}>Area Medico</h1>
+                <p style={{ color: "#8FA8B0", marginBottom: "20px" }}>Ciao Dott. {user?.nome || "Fabio"}</p>
+
+                <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "20px" }}>
+                    <div>
+                        <div style={{ backgroundColor: "white", borderLeft: "6px solid #C8B6FF", borderRadius: "16px", padding: "16px", marginBottom: "16px" }}>
+                            <h2 style={{ fontWeight: "bold", color: "#7A6BC5", marginBottom: "12px" }}>Appuntamenti in arrivo ({inArrivo.length})</h2>
+                            {inArrivo.map(p => (
+                                <div key={p.id} style={{ backgroundColor: "#F0EFFF", padding: "12px", borderRadius: "12px", marginBottom: "8px", display: "flex", justifyContent: "space-between" }}>
+                                    <div>
+                                        <div style={{ fontWeight: "600", color: "#5A4E8C" }}>
+                                            {p.paziente?.nome || p.nomePaziente || p.paziente?.username || "Paziente"} - {p.motivo || "Visita"}
+                                        </div>
+                                        <div style={{ fontSize: "12px", color: "#666" }}>{formattaData(p)}</div>
+                                    </div>
+                                    <button onClick={() => setSelected(p)} style={{ backgroundColor: "#B8E0E6", border: "none", padding: "8px 14px", borderRadius: "20px", fontWeight: "600", cursor: "pointer" }}>Referto</button>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div style={{ backgroundColor: "white", borderRadius: "16px", padding: "16px" }}>
+                            <h2 style={{ fontWeight: "bold", color: "#7A6BC5", marginBottom: "12px" }}>Storico ({storico.length}) - Appuntamenti conclusi o annullati</h2>
+                            {storico.length===0 && <p style={{fontSize:"13px", color:"#aaa"}}>Quando completi un referto, l'appuntamento finirà qui</p>}
+                            {storico.map(p => (
+                                <div key={p.id} style={{ border: "1px solid #eee", padding: "10px", borderRadius: "10px", marginBottom: "6px", fontSize: "13px" }}>
+                                    {formattaData(p)} - {p.paziente?.nome || "Paziente"} - {p.stato}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div style={{ backgroundColor: "#B8E0E6", borderRadius: "16px", padding: "20px", height: "fit-content", position: "sticky", top: "20px" }}>
+                        <h2 style={{ fontWeight: "bold", color: "#2E5A62", marginBottom: "12px" }}>Compila Referto</h2>
+                        {!selected ? <p style={{ fontSize: "13px", color: "#5A7A82" }}>Clicca su "Referto" per compilarlo.</p> : (
+                            <>
+                                <div style={{ backgroundColor: "rgba(255,255,255,0.7)", padding: "10px", borderRadius: "10px", marginBottom: "12px" }}>
+                                    <div style={{ fontWeight: "bold", fontSize: "14px" }}>{selected.paziente?.nome || "Paziente"}</div>
+                                    <div style={{ fontSize: "12px" }}>{formattaData(selected)}</div>
+                                </div>
+                                <label style={{ fontSize: "12px", fontWeight: "600" }}>Diagnosi</label>
+                                <textarea style={{ width: "100%", borderRadius: "10px", border: "none", padding: "10px", marginBottom: "10px" }} rows="4" value={referto.diagnosi} onChange={e => setReferto({...referto, diagnosi: e.target.value})} />
+                                <label style={{ fontSize: "12px", fontWeight: "600" }}>Prescrizione</label>
+                                <textarea style={{ width: "100%", borderRadius: "10px", border: "none", padding: "10px", marginBottom: "10px" }} rows="3" value={referto.prescrizione} onChange={e => setReferto({...referto, prescrizione: e.target.value})} />
+                                <label style={{ fontSize: "12px", fontWeight: "600" }}>Note</label>
+                                <textarea style={{ width: "100%", borderRadius: "10px", border: "none", padding: "10px", marginBottom: "14px" }} rows="2" value={referto.note} onChange={e => setReferto({...referto, note: e.target.value})} />
+                                <button onClick={salvaReferto} style={{ width: "100%", backgroundColor: "#C8B6FF", color: "white", border: "none", padding: "12px", borderRadius: "20px", fontWeight: "bold", cursor: "pointer" }}>Salva Referto</button>
+                                <button onClick={() => setSelected(null)} style={{ width: "100%", background: "none", border: "none", marginTop: "8px", cursor: "pointer" }}>Annulla</button>
+                            </>
+                        )}
+                    </div>
                 </div>
-            )}
+            </div>
         </div>
-    )
+    );
 }

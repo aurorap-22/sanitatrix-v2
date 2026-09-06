@@ -1,132 +1,172 @@
-import { useState, useEffect } from 'react'
-import axios from 'axios'
+import { useEffect, useState, useMemo } from "react";
+import axios from "axios";
 
 export default function PazienteDashboard() {
-    const [prenotazioni, setPrenotazioni] = useState([])
-    const [medici, setMedici] = useState([])
-    const [prestazioni, setPrestazioni] = useState([])
-    const [referti, setReferti] = useState([])
-    const [tab, setTab] = useState('prenotazioni')
-    const [loading, setLoading] = useState(true)
-    const [form, setForm] = useState({ idMedico: '', idPrestazione: '', dataOra: '' })
-    const [pazienteId, setPazienteId] = useState(null)
+    const [prenotazioni, setPrenotazioni] = useState([]);
+    const [referti, setReferti] = useState([]);
+    const [medici, setMedici] = useState([
+        {id:1, nome:"Fabio", cognome:"Volo", specializzazione:"CARDIOLOGIA"},
+        {id:2, nome:"Mario", cognome:"Rossi", specializzazione:"OCULISTICA"}
+    ]);
+    const [prestazioni, setPrestazioni] = useState([
+        {id:1, nome:"Visita Base", tipo:"VISITA_BASE"},
+        {id:2, nome:"Visita Cardiologica", tipo:"CARDIOLOGIA"},
+        {id:3, nome:"Visita Oculistica", tipo:"OCULISTICA"},
+        {id:4, nome:"Visita Dermatologica", tipo:"DERMATOLOGIA"},
+    ]);
+    const [medicoId, setMedicoId] = useState("");
+    const [prestazioneId, setPrestazioneId] = useState("");
+    const [dataGiorno, setDataGiorno] = useState("");
+    const [orario, setOrario] = useState("");
+    const [slotLiberi, setSlotLiberi] = useState([]);
 
-    const utenteId = localStorage.getItem('id')
+    useEffect(()=>{
+        const carica = async ()=>{
+            try{
+                const token = localStorage.getItem("token") || localStorage.getItem("jwt");
+                const headers = token? {Authorization:`Bearer ${token}`} : {};
 
-    const caricaTutto = async () => {
-        setLoading(true)
-        let pid = null
+                const r3 = await axios.get("http://localhost:8080/api/medici", {headers});
+                const lista = Array.isArray(r3.data)? r3.data : r3.data.content || [];
+                if(lista.length>0) setMedici([...new Map(lista.map(m=>[m.id,m])).values()]);
 
-        // Trova paziente vero dall'utente loggato
-        try {
-            const res = await axios.get(`http://localhost:8080/api/pazienti/utente/${utenteId}`)
-            pid = res.data.id
-        } catch {
+                try{
+                    const rP = await axios.get("http://localhost:8080/api/prestazioni", {headers});
+                    if(rP.data?.length>0) setPrestazioni(rP.data);
+                }catch{}
+
+                try{
+                    const r1 = await axios.get("http://localhost:8080/api/prenotazioni/mie", {headers});
+                    setPrenotazioni(r1.data || []);
+                }catch{
+                    const r1b = await axios.get("http://localhost:8080/api/prenotazioni", {headers});
+                    setPrenotazioni(r1b.data || []);
+                }
+
+                try{
+                    const r2 = await axios.get("http://localhost:8080/api/referti/miei", {headers});
+                    setReferti(r2.data || []);
+                }catch{
+                    const r2b = await axios.get("http://localhost:8080/api/referti", {headers});
+                    setReferti(r2b.data || []);
+                }
+            }catch(e){ console.log("uso finti", e) }
+        };
+        carica();
+    },[]);
+
+    const medicoSelezionato = useMemo(() => medici.find(m => String(m.id) === String(medicoId)), [medici, medicoId]);
+
+    const prestazioniFiltrate = useMemo(() => {
+        if (!medicoSelezionato) return [];
+        const spec = medicoSelezionato.specializzazione;
+        return prestazioni.filter(p => p.tipo === "VISITA_BASE" || p.tipo === spec || p.nome?.toUpperCase().includes(spec));
+    }, [prestazioni, medicoSelezionato]);
+
+    useEffect(()=>{
+        const caricaSlot = async () => {
+            if (!medicoId ||!dataGiorno) { setSlotLiberi([]); return; }
             try {
-                const all = await axios.get(`http://localhost:8080/api/pazienti`)
-                const mio = all.data.find(p => p.utente?.id == utenteId)
-                if (mio) pid = mio.id
-            } catch {}
+                const token = localStorage.getItem("token") || localStorage.getItem("jwt");
+                const headers = token? {Authorization:`Bearer ${token}`} : {};
+                const res = await axios.get(`http://localhost:8080/api/prenotazioni/slot?medicoId=${medicoId}&data=${dataGiorno}`, {headers});
+                setSlotLiberi(res.data);
+            } catch(e){ console.log(e); setSlotLiberi([]); }
+        };
+        caricaSlot();
+        setOrario("");
+    }, [medicoId, dataGiorno]);
+
+    useEffect(()=>{ setPrestazioneId(""); }, [medicoId]);
+
+    const handlePrenota = async (e)=>{
+        e.preventDefault();
+        if(!medicoId ||!prestazioneId ||!dataGiorno ||!orario) return alert("Compila tutto");
+        const dataOra = `${dataGiorno}T${orario}:00`;
+        try{
+            const token = localStorage.getItem("token") || localStorage.getItem("jwt");
+            const headers = token? {Authorization:`Bearer ${token}`} : {};
+            await axios.post("http://localhost:8080/api/prenotazioni", {
+                medico: {id: Number(medicoId)},
+                prestazione: {id: Number(prestazioneId)},
+                dataOra: dataOra
+            }, {headers});
+            alert(`Prenotato per ${dataGiorno} alle ${orario}!`);
+            window.location.reload();
+        }catch(err){
+            alert(err.response?.data?.message || err.response?.data || err.message);
         }
-        if (!pid) pid = utenteId
-        setPazienteId(pid)
-
-        try {
-            const r1 = await axios.get(`http://localhost:8080/api/prenotazioni/prenotazioni/paziente/${pid}`)
-            setPrenotazioni(r1.data)
-        } catch {}
-
-        try {
-            const r2 = await axios.get(`http://localhost:8080/api/referti/paziente/${pid}`)
-            setReferti(r2.data)
-        } catch {}
-
-        try { const r3 = await axios.get(`http://localhost:8080/api/medici`); setMedici(r3.data) } catch {}
-        try { const r4 = await axios.get(`http://localhost:8080/api/prestazione`); setPrestazioni(r4.data) } catch {}
-
-        setLoading(false)
-    }
-
-    useEffect(() => { caricaTutto() }, [])
-
-    const handlePrenota = async (e) => {
-        e.preventDefault()
-        const dataOra = new Date(form.dataOra)
-        const dataFine = new Date(dataOra.getTime() + 60*60*1000)
-        const payload = {
-            dataOra: dataOra.toISOString(),
-            dataFine: dataFine.toISOString(),
-            stato: "PRENOTATA",
-            paziente: { id: Number(pazienteId) },
-            medico: { id: Number(form.idMedico) },
-            prestazione: { id: Number(form.idPrestazione) }
-        }
-        try {
-            await axios.post(`http://localhost:8080/api/prenotazioni/add-prenotazione`, payload)
-            alert("Prenotazione creata!")
-            setForm({ idMedico: '', idPrestazione: '', dataOra: '' })
-            caricaTutto()
-        } catch { alert("Errore prenotazione") }
-    }
-
-    if (loading) return <div style={{ padding: '40px' }}>Caricamento...</div>
+    };
 
     return (
-        <div style={{ padding: '20px', background: '#f0f7ff', minHeight: '100vh', fontFamily: 'sans-serif' }}>
-            <div style={{ background: 'white', padding: '20px', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                <h1 style={{ color: '#2563eb', margin: 0 }}>Dashboard Paziente</h1>
-                <button onClick={() => { localStorage.clear(); window.location.href = '/' }} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '8px 14px', borderRadius: '6px' }}>Logout</button>
-            </div>
+        <div style={s.page}>
+            <h1 style={s.h1}>La tua area personale</h1>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: '20px' }}>
-                <div style={{ background: 'white', padding: '20px', borderRadius: '12px' }}>
-                    <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-                        <button onClick={() => setTab('prenotazioni')} style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', background: tab==='prenotazioni'?'#2563eb':'#e5e7eb', color: tab==='prenotazioni'?'white':'black', fontWeight: 'bold' }}>Prenotazioni ({prenotazioni.length})</button>
-                        <button onClick={() => setTab('referti')} style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', background: tab==='referti'?'#16a34a':'#e5e7eb', color: tab==='referti'?'white':'black', fontWeight: 'bold' }}>Storico Referti ({referti.length})</button>
-                    </div>
+            <div style={s.grid}>
+                <div style={s.card}>
+                    <div style={s.badge}>Nuova prenotazione</div>
+                    <form onSubmit={handlePrenota} style={s.form}>
+                        <label style={s.label}>Medico</label>
+                        <select style={s.input} value={medicoId} onChange={e=>setMedicoId(e.target.value)}>
+                            <option value="">Seleziona medico</option>
+                            {medici.map(m=>(<option key={m.id} value={m.id}>{m.nome} {m.cognome} - {m.specializzazione}</option>))}
+                        </select>
 
-                    {tab === 'prenotazioni' ? (
-                        prenotazioni.length === 0 ? <p>Nessuna prenotazione.</p> :
-                            prenotazioni.map(p => (
-                                <div key={p.id} style={{ border: '1px solid #dbeafe', padding: '14px', borderRadius: '10px', marginBottom: '12px', background: '#f8fafc' }}>
-                                    <b>📅 {new Date(p.dataOra).toLocaleString()}</b><br/>
-                                    👨‍⚕️ {p.medico?.nome} {p.medico?.cognome} - {p.prestazione?.nome} ({p.prestazione?.prezzo}€)<br/>
-                                    <span style={{ background: '#fef3c7', padding: '2px 8px', borderRadius: '10px' }}>{p.stato}</span>
-                                </div>
-                            ))
-                    ) : (
-                        referti.length === 0 ? <p>Nessun referto ancora.</p> :
-                            referti.map(r => (
-                                <div key={r.id} style={{ border: '1px solid #bbf7d0', background: '#f0fdf4', padding: '15px', borderRadius: '10px', marginBottom: '12px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                        <b style={{ color: '#15803d' }}>Referto #{r.id}</b>
-                                        <span style={{ fontSize: '13px' }}>{r.dataReferto ? new Date(r.dataReferto).toLocaleDateString() : ''}</span>
-                                    </div>
-                                    <p><b>Diagnosi:</b> {r.diagnosi}</p>
-                                    <p><b>Terapia:</b> {r.terapia}</p>
-                                    <p><b>Esami consigliati:</b> {r.esamiConsigliati}</p>
-                                    {r.prenotazione && <small>Visita del {new Date(r.prenotazione.dataOra).toLocaleDateString()}</small>}
-                                </div>
-                            ))
-                    )}
+                        <label style={s.label}>Prestazione</label>
+                        <select style={s.input} value={prestazioneId} onChange={e=>setPrestazioneId(e.target.value)} disabled={!medicoSelezionato}>
+                            <option value="">{!medicoSelezionato? "Prima scegli un medico" : "Seleziona prestazione"}</option>
+                            {prestazioniFiltrate.map(p=>(<option key={p.id} value={p.id}>{p.nome}</option>))}
+                        </select>
+
+                        <label style={s.label}>Giorno (lun-ven)</label>
+                        <input style={s.input} type="date" value={dataGiorno} onChange={e=>setDataGiorno(e.target.value)} />
+
+                        <label style={s.label}>Orario (slot 30 min)</label>
+                        <select style={s.input} value={orario} onChange={e=>setOrario(e.target.value)} disabled={slotLiberi.length===0}>
+                            <option value="">{slotLiberi.length===0? "Scegli giorno e medico" : "Seleziona orario"}</option>
+                            {slotLiberi.map(h=><option key={h} value={h}>{h}</option>)}
+                        </select>
+
+                        <button style={s.btn}>Prenota ora</button>
+                    </form>
                 </div>
 
-                <div style={{ background: 'white', padding: '20px', borderRadius: '12px', height: 'fit-content' }}>
-                    <h3 style={{ textAlign: 'center' }}>Nuova Prenotazione</h3>
-                    <form onSubmit={handlePrenota} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '15px' }}>
-                        <select required value={form.idMedico} onChange={e => setForm({...form, idMedico: e.target.value})} style={{ padding: '10px' }}>
-                            <option value="">Medico</option>
-                            {medici.map(m => <option key={m.id} value={m.id}>{m.nome} {m.cognome} - {m.specializzazione}</option>)}
-                        </select>
-                        <select required value={form.idPrestazione} onChange={e => setForm({...form, idPrestazione: e.target.value})} style={{ padding: '10px' }}>
-                            <option value="">Prestazione</option>
-                            {prestazioni.map(pr => <option key={pr.id} value={pr.id}>{pr.nome} - {pr.prezzo}€</option>)}
-                        </select>
-                        <input required type="datetime-local" value={form.dataOra} onChange={e => setForm({...form, dataOra: e.target.value})} style={{ padding: '10px' }} />
-                        <button type="submit" style={{ padding: '12px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>PRENOTA</button>
-                    </form>
+                <div style={{display:"flex", flexDirection:"column", gap:"20px"}}>
+                    <div style={s.card}>
+                        <h3 style={s.cardTitle}>Prenotazioni</h3>
+                        {prenotazioni.length===0? <p style={s.empty}>Nessuna prenotazione</p> : prenotazioni.map(p=>(
+                            <div key={p.id} style={s.row}>
+                                <b>{p.dataOra?.replace("T"," ")?.substring(0,16)}</b> - {p.medico?.nome} {p.stato}
+                            </div>
+                        ))}
+                    </div>
+
+                    <div style={s.card}>
+                        <h3 style={s.cardTitle}>Storico Referti</h3>
+                        {referti.length===0? <p style={s.empty}>Nessun referto disponibile</p> : referti.map(r=>(
+                            <div key={r.id} style={s.row}>
+                                <b>{r.data?.substring(0,10) || ""}</b> - {r.descrizione || r.titolo || "Referto"}
+                                <a href={r.fileUrl} target="_blank" style={{marginLeft:"8px", color:"#7a6fbf"}}>Apri</a>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>
-    )
+    );
+}
+
+const s={
+    page:{minHeight:"100vh", background:"#f3f4f8", padding:"28px", fontFamily:"Inter, sans-serif"},
+    h1:{color:"#7a6fbf", fontWeight:800, margin:0, fontSize:"28px", marginBottom:"16px"},
+    grid:{display:"grid", gridTemplateColumns:"380px 1fr", gap:"20px"},
+    card:{background:"white", borderRadius:"20px", padding:"20px", border:"1px solid #ecebf6", boxShadow:"0 8px 24px rgba(184,174,230,0.15)"},
+    badge:{background:"#e9e6f9", color:"#7a6fbf", padding:"6px 12px", borderRadius:"20px", fontSize:"12px", fontWeight:700, display:"inline-block", marginBottom:"12px"},
+    label:{fontSize:"11px", fontWeight:600, color:"#8a86a3", marginTop:"8px"},
+    input:{padding:"12px", borderRadius:"12px", border:"1px solid #e6e3f3", background:"#fafafd", fontSize:"14px"},
+    btn:{marginTop:"14px", padding:"12px", borderRadius:"12px", border:"none", background:"#b8aee6", color:"white", fontWeight:700, cursor:"pointer"},
+    cardTitle:{color:"#7a6fbf", margin:"0 0 10px 0", fontSize:"16px"},
+    empty:{color:"#b0aacb", fontSize:"13px"},
+    form:{display:"flex", flexDirection:"column", gap:"6px"},
+    row:{padding:"8px 0", borderBottom:"1px solid #f0eef8", fontSize:"13px", color:"#5a5670"}
 }

@@ -1,12 +1,14 @@
 package com.sanitatrix.sanitatrix_v2.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name="medici")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Medico {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,10 +26,13 @@ public class Medico {
    @Column
     private String telefono;
 
-   @OneToOne @JoinColumn(name = "id_utente", nullable = false, unique = true)
+   @OneToOne
+   @JoinColumn(name = "id_utente", nullable = false, unique = true)
+   @JsonIgnoreProperties({"password", "codiceFiscale", "medico", "paziente"})
     private Utente utente;
 
    @OneToMany(mappedBy = "medico", cascade = CascadeType.ALL, orphanRemoval = true)
+   @JsonIgnore
     private List<Prenotazione> prenotazioni= new ArrayList<>();
 
     @OneToMany(mappedBy = "medico", cascade = CascadeType.ALL, orphanRemoval = true)

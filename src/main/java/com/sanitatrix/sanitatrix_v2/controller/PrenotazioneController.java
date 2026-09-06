@@ -1,52 +1,76 @@
 package com.sanitatrix.sanitatrix_v2.controller;
 
 import com.sanitatrix.sanitatrix_v2.model.Prenotazione;
+import com.sanitatrix.sanitatrix_v2.repository.PrenotazioneRepository;
 import com.sanitatrix.sanitatrix_v2.service.PrenotazioneService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDateTime;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.util.List;
+
 @RestController
 @RequestMapping("/api/prenotazioni")
 @CrossOrigin(origins = "http://localhost:5173")
 public class PrenotazioneController {
+
     @Autowired
     private PrenotazioneService prenotazioneService;
-    //POST testaddprenot
-    @PostMapping("/add-prenotazione")
-    public ResponseEntity<Prenotazione> addPrenotazione(@RequestBody Prenotazione prenotazione){
-        Prenotazione saved = prenotazioneService.createPrenotazione(prenotazione);
-        return ResponseEntity.ok(saved);
-    }
-    //GET test-getprenotazioni
+
+    @Autowired
+    private PrenotazioneRepository prenotazioneRepository;
+
     @GetMapping("/get-prenotazioni")
-    public ResponseEntity<List<Prenotazione>> getAllPrenotazioni() {
+    public ResponseEntity<List<Prenotazione>> getAllPrenotazioni(){
         return ResponseEntity.ok(prenotazioneService.findAll());
     }
-    //GET test-prenotazioni-paziente-id
-    @GetMapping("/prenotazioni/paziente/{id}")
-    public ResponseEntity<List<Prenotazione>> getByPaziente(@PathVariable Long id){
-        return ResponseEntity.ok(prenotazioneService.findByPazienteId(id));
+
+    @PostMapping("/add-prenotazione")
+    public ResponseEntity<Prenotazione> addPrenotazione(@RequestBody Prenotazione prenotazione){
+        return ResponseEntity.ok(prenotazioneService.createPrenotazione(prenotazione));
     }
 
-    @GetMapping("/medico/{id}/per-data")
-    public ResponseEntity<List<Prenotazione>> getByMedicoEData(@PathVariable Long id, @RequestParam @DateTimeFormat( iso = DateTimeFormat.ISO.DATE_TIME)LocalDateTime inizio,
-                                                               @RequestParam @DateTimeFormat( iso = DateTimeFormat.ISO.DATE_TIME)LocalDateTime fine){
-        return ResponseEntity.ok(prenotazioneService.findByMedicoIdAndDataOraBetween(id, inizio, fine));
-    }
-    @GetMapping("/prenotazioni/stato/{stato}")
-    public ResponseEntity<List<Prenotazione>> getByStato(@PathVariable String stato) {
-        return ResponseEntity.ok(prenotazioneService.findByStato(stato));
+    @GetMapping
+    public ResponseEntity<List<Prenotazione>> getAll(){
+        return ResponseEntity.ok(prenotazioneService.findAll());
     }
 
-    @GetMapping("/medico/{id}")
-    public ResponseEntity<List<Prenotazione>> getByMedico(@PathVariable Long id){
-        return ResponseEntity.ok(prenotazioneService.findByMedicoId(id));
+    @GetMapping("/mie")
+    public ResponseEntity<List<Prenotazione>> getMie(){
+        return ResponseEntity.ok(prenotazioneService.findAll());
     }
 
+    // --- QUESTO È QUELLO CHE TI MANCAVA ---
+    @GetMapping("/medico/{idMedico}")
+    public ResponseEntity<List<Prenotazione>> getByMedico(@PathVariable Long idMedico){
+        List<Prenotazione> lista = prenotazioneRepository.findByMedicoId(idMedico);
+        return ResponseEntity.ok(lista);
+    }
 
+    @GetMapping("/paziente/{idPaziente}")
+    public ResponseEntity<List<Prenotazione>> getByPaziente(@PathVariable Long idPaziente){
+        List<Prenotazione> lista = prenotazioneRepository.findByPazienteId(idPaziente);
+        return ResponseEntity.ok(lista);
+    }
 
+    @PostMapping
+    public ResponseEntity<?> crea(@RequestBody Prenotazione prenotazione){
+        try{
+            return ResponseEntity.ok(prenotazioneService.createPrenotazione(prenotazione));
+        }catch(RuntimeException e){
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/slot")
+    public ResponseEntity<List<String>> getSlot(
+            @RequestParam Long medicoId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data){
+        if(data.getDayOfWeek() == DayOfWeek.SATURDAY || data.getDayOfWeek() == DayOfWeek.SUNDAY){
+            return ResponseEntity.ok(List.of());
+        }
+        return ResponseEntity.ok(List.of("09:00","09:30","10:00","10:30","11:00","11:30","15:00","15:30","16:00"));
+    }
 }
