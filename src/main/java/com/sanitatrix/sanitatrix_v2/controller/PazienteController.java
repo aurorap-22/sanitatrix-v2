@@ -35,6 +35,13 @@ public class PazienteController {
         return pazienteService.getAllPazienti();
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<Paziente> getById(@PathVariable Long id) {
+        Paziente p = pazienteService.getPazienteById(id);
+        if (p == null) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(p);
+    }
+
     @GetMapping("/utente/{idUtente}")
     public ResponseEntity<Paziente> getByUtenteId(@PathVariable Long idUtente){
         return pazienteService.getAllPazienti().stream().filter(p->p.getUtente() != null && p.getUtente().getId().equals(idUtente)).findFirst().map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
@@ -64,3 +71,4 @@ public class PazienteController {
     }
 
 }
+
