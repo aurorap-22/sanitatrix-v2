@@ -40,7 +40,7 @@ public class PrenotazioneService {
         return prenotazioneRepository.findAll();
     }
 
-    // METODO CHE IL CONTROLLER CERCA ALLA RIGA 31 e 59
+
     public Prenotazione createPrenotazione(Prenotazione prenotazioneInput) {
 
         if (prenotazioneInput.getMedico() == null || prenotazioneInput.getMedico().getId() == null) {
